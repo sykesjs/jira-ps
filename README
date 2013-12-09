@@ -1,6 +1,8 @@
 JIRA PowerShell Toolkit
 =======================
 
+Requires PowerShell 4.0
+
 This is pretty rough at the moment and offers the bare minimum to be able to
 construct PowerShell scripts that can access JIRA in a convenient manner.
 
@@ -9,6 +11,10 @@ current environment:
 
     > cd .\jira-ps
     > Import-Module .\Jira
+
+Set your JIRA Api Base:
+
+    > Set-JiraApiBase
 
 Set your JIRA credentials but note that these are insecurely stored in the Windows
 Environment in base64 encoded form:

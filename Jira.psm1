@@ -33,9 +33,10 @@ Function Invoke-JiraRequest($method, $request) {
         Write-Error "No JIRA credentials have been set, please run ``Set-JiraCredentials'"
     }
     Write-Debug "Calling $method $env:JIRA_API_BASE$request with AUTH: Basic $env:JIRA_CREDENTIALS"
-    Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}${request}" -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Method $method
+    Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}${request}" -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Method $method -ContentType "application/json"
 }
 
+# Begin Get Functions
 Function Get-JiraIssue($issue) {
     Return Invoke-JiraRequest GET "issue/$(ConvertTo-SafeUri $issue)"
 }
@@ -49,12 +50,26 @@ Function Get-JiraSearchResult($query) {
 }
 
 Function Get-JiraProjectList {
+    # Returns All Projects on a Jira Server
     Return Invoke-JiraRequest GET "project"
 }
 
 Function Get-JiraProject($project) {
+    # Returns a Particular Project
     Return Invoke-JiraRequest GET "project/$(ConvertTo-SafeUri $project)"
 }
+
+Function Get-JiraProjectRole($project, $role) {
+    # Returns Users and Groups in a Role in a Jira Project (10000 - Users; 10002 - Administrators; 10001 - Developers)
+    Return Invoke-JiraRequest GET "project/$(ConvertTo-SafeUri $project)/role/$(ConvertTo-SafeUri $role)"
+}
+# End Get Functions
+
+# Begin Start Functions
+Function Start-JiraBackgroundReIndex {
+    Return Invoke-JiraRequest POST "reindex"
+}
+# End Start Functions
 
 Export-ModuleMember -Function Set-JiraApiBase,
                               Set-JiraCredentials,
@@ -62,6 +77,8 @@ Export-ModuleMember -Function Set-JiraApiBase,
                               Invoke-JiraRequest,
                               Get-JiraProjectList,
                               Get-JiraProject,
+                              Get-JiraProjectRole,
                               Get-JiraIssue,
                               Get-JiraHistory,
-                              Get-JiraSearchResult
+                              Get-JiraSearchResult,
+                              Start-JiraBackgroundReIndex
