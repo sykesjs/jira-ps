@@ -6,8 +6,11 @@ Function Set-JiraApiBase {
     Param (
         [Parameter (Mandatory=$True)]
         [string] $jira_api_base
+    )
 
         $env:JIRA_API_BASE = $jira_api_base
+        Write-Host "Jira Api Base Set:"
+        Write-Host $env:JIRA_API_BASE
 }
 
 Function Set-JiraCredentials {
@@ -25,11 +28,12 @@ Function Set-JiraCredentials {
 Function Invoke-JiraRequest($method, $request) {
     If ($env:JIRA_API_BASE -eq $Null) {
         Write-Error "JIRA API Base has not been set, please run ``Set-JiraApiBase'"
+    }
     If ($env:JIRA_CREDENTIALS -eq $Null) {
         Write-Error "No JIRA credentials have been set, please run ``Set-JiraCredentials'"
     }
     Write-Debug "Calling $method $env:JIRA_API_BASE$request with AUTH: Basic $env:JIRA_CREDENTIALS"
-    Return Invoke-RestMethod -Uri "$env:JIRA_API_BASE${request}" -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Method $method
+    Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}${request}" -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Method $method
 }
 
 Function Get-JiraIssue($issue) {
@@ -48,12 +52,16 @@ Function Get-JiraProjectList {
     Return Invoke-JiraRequest GET "project"
 }
 
-Function Get
+Function Get-JiraProject($project) {
+    Return Invoke-JiraRequest GET "project/$(ConvertTo-SafeUri $project)"
+}
 
-Export-ModuleMember -Function Set-JiraCredentials,
+Export-ModuleMember -Function Set-JiraApiBase,
+                              Set-JiraCredentials,
                               ConvertTo-SafeUri,
                               Invoke-JiraRequest,
                               Get-JiraProjectList,
+                              Get-JiraProject,
                               Get-JiraIssue,
                               Get-JiraHistory,
                               Get-JiraSearchResult
