@@ -31,3 +31,14 @@ https://github.com/MajorManUMan/jira-ps
 
 
 # Main Script Body
+
+# Connect ot Jira
+Set-JiraApiBase
+Set-JiraCredentials
+
+#Enumerate all Projects on the server.
+$Projects = Get-JiraProjectList
+
+foreach ($project in $Projects {
+    
+}
