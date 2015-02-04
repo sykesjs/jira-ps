@@ -32,13 +32,18 @@ https://github.com/MajorManUMan/jira-ps
 
 # Main Script Body
 
-# Connect ot Jira
-Set-JiraApiBase
-Set-JiraCredentials
+# Connect to Jira
+#Set-JiraApiBase
+#Set-JiraCredentials
+
+#Check UserGroup
 
 #Enumerate all Projects on the server.
 $Projects = Get-JiraProjectList
 
-foreach ($project in $Projects {
-    
-}
+foreach ($Project in $Projects) {
+     Write-Host $Project.Name $Project.id
+     $ProjectID = $Project.id
+     $JsonProjectRole = Get-JiraProjectRole $ProjectID 10000
+     Write-Host $JsonProjectRole.actor
+    }
