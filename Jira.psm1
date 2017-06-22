@@ -1,4 +1,4 @@
-﻿Function ConvertTo-SafeUri($uri) {
+Function ConvertTo-SafeUri($uri) {
     Return [System.Uri]::EscapeDataString($uri)
 }
 
@@ -35,12 +35,29 @@ Function Invoke-JiraRequest($method, $request, $body) {
     }
     Write-Debug "Calling $method $env:JIRA_API_BASE$request with AUTH: Basic $env:JIRA_CREDENTIALS"
     If ($body -eq $Null) {
+
         Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}${request}" -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Method $method -ContentType "application/json"
     }
     else {
         Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}${request}" -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Method $method -Body $body -ContentType "application/json"
     }
 }
+
+# Begin Remove Functions
+Function Remove-JiraIssueLink($linkID) {
+     Return Invoke-JiraRequest DELETE "issueLink/$(ConvertTo-SafeUri $linkID)"
+    }
+
+Function Remove-JiraProject($project) {
+     Return Invoke-JiraRequest DELETE "project/$(ConvertTo-SafeUri $project)"
+    }
+
+
+Function Remove-JiraGroupFromRole ($project, $role, $group) {
+     Return Invoke-JiraRequest DELETE "project/$(ConvertTo-SafeUri $project)/role/$(ConvertTo-SafeUri $role)?group=$(ConvertTo-SafeUri $group)"
+    }
+# End Remove Functions
+
 
 # Begin Get Functions
 Function Get-JiraGroup($group) {
@@ -55,6 +72,9 @@ Function Get-JiraIssue($issue) {
     Return Invoke-JiraRequest GET "issue/$(ConvertTo-SafeUri $issue)"
 }
 
+Function Get-JiraIssueLink($issue, $linkeid) {
+    Return Invoke-JiraRequest GET "issue/$(ConvertTo-SafeUri $issue)/issueLink/$(ConvertTo-SafeUri $linkedid)"
+}
 
 Function Get-JiraSearchResult($query) {
     Return Invoke-JiraRequest GET "search?jql=$(ConvertTo-SafeUri $query)"
@@ -74,6 +94,14 @@ Function Get-JiraProjectRole($project, $role) {
     # Returns Users and Groups in a Role in a Jira Project (10000 - Users; 10002 - Administrators; 10001 - Developers)
     Return Invoke-JiraRequest GET "project/$(ConvertTo-SafeUri $project)/role/$(ConvertTo-SafeUri $role)"
 }
+
+Function Get-JiraProjectNotificationScheme ($strproject) {
+    Return Invoke-JiraRequest GET "project/$(ConvertTo-SafeUri $strproject)/notificationscheme"
+}
+
+Function Get-JiraProjectPermissionScheme ($strproject) {
+    Return Invoke-JiraRequest GET "project/$(ConvertTo-SafeUri $strproject)/permissionscheme"
+}
 # End Get Functions
 
 # Begin Start Functions
@@ -92,16 +120,31 @@ Function Add-JiraGrouptoProject($project, $role, $json) {
 }
 # End Add Functions
 
+# Begin Update Functions
+Function Update-ProjectPermissionScheme ($strProjectKey,$jsonProject) {
+    # $objProject should be a properly formated json e.g.
+    # { "permissionScheme": 10500 }
+    Return Invoke-JiraRequest PUT "project/$(ConvertTo-SafeUri $strProjectKey)" $jsonProject
+}
+# End Update Functions
+
 Export-ModuleMember -Function Set-JiraApiBase,
                               Set-JiraCredentials,
                               ConvertTo-SafeUri,
+                              Remove-JiraIssueLink,
+                              Remove-JiraProject,
+                              Remove-JiraGroupFromRole,
                               Invoke-JiraRequest,
                               Add-JiraGrouptoProject,
                               Get-JiraGroup,
                               Get-JiraProjectList,
                               Get-JiraProject,
                               Get-JiraProjectRole,
+                              Get-JiraProjectNotificationScheme,
+                              Get-JiraProjectPermissionScheme,
                               Get-JiraIssue,
+                              Get-JiraIssueLink,
                               Get-JiraHistory,
                               Get-JiraSearchResult,
-                              Start-JiraBackgroundReIndex
+                              Start-JiraBackgroundReIndex,
+                              Update-ProjectPermissionScheme
