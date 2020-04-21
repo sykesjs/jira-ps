@@ -72,6 +72,9 @@ Function Get-JiraIssue($issue) {
     Return Invoke-JiraRequest GET "issue/$(ConvertTo-SafeUri $issue)"
 }
 
+Function Get-JiraIssueAttachment($attachmenturl, $attachmentfilename) {
+    Return Invoke-WebRequest -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} $attachmenturl -OutFile $attachmentfilename
+}
 Function Get-JiraIssueLink($issue, $linkeid) {
     Return Invoke-JiraRequest GET "issue/$(ConvertTo-SafeUri $issue)/issueLink/$(ConvertTo-SafeUri $linkedid)"
 }
@@ -143,6 +146,7 @@ Export-ModuleMember -Function Set-JiraApiBase,
                               Get-JiraProjectNotificationScheme,
                               Get-JiraProjectPermissionScheme,
                               Get-JiraIssue,
+                              Get-JiraIssueAttachment,
                               Get-JiraIssueLink,
                               Get-JiraHistory,
                               Get-JiraSearchResult,
