@@ -121,6 +121,28 @@ Function Add-JiraGrouptoProject($project, $role, $json) {
     # { "group" : ["jira-developers"] }
     Return Invoke-JiraRequest POST "project/$(ConvertTo-SafeUri $project)/role/$(ConvertTo-SafeUri $role)" $json
 }
+
+Function Add-JiraAttachment($issue, $file) {
+    # This function is much more complex than most, rather than use Invoke-JiraRequest, just using Invoke-RestMethod natively
+    # Adding header to prevent XSXF error
+    $hashRequestHeader = @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"; "X-Atlassian-Token"="no-check"}
+    $strFieldName = "file"
+    $strContentType = "application/octet-stream"
+
+    # Build Multipart Form Content payload
+    $FileStream = [System.IO.FileStream]::new($file, [System.IO.FileMode]::Open)
+    $FileHeader = [System.Net.Http.Headers.ContentDispositionHeaderValue]::new('form-data')
+    $FileHeader.Name = $strFieldName
+    $FileHeader.FileName = Split-Path -leaf $file
+    $FileContent = [System.Net.Http.StreamContent]::new($FileStream)
+    $FileContent.Headers.ContentDisposition = $FileHeader
+    $FileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse($strContentType)
+
+    $MultipartContent = [System.Net.Http.MultipartFormDataContent]::new()
+    $MultipartContent.Add($FileContent)
+
+    Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}issue/$(ConvertTo-SafeUri $issue)/attachments" -Method POST -Headers $hashRequestHeader -Body $MultipartContent
+}
 # End Add Functions
 
 # Begin Update Functions
@@ -139,6 +161,7 @@ Export-ModuleMember -Function Set-JiraApiBase,
                               Remove-JiraGroupFromRole,
                               Invoke-JiraRequest,
                               Add-JiraGrouptoProject,
+                              Add-JiraAttachment,
                               Get-JiraGroup,
                               Get-JiraProjectList,
                               Get-JiraProject,
