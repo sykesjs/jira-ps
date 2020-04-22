@@ -122,7 +122,7 @@ Function Add-JiraGrouptoProject($project, $role, $json) {
     Return Invoke-JiraRequest POST "project/$(ConvertTo-SafeUri $project)/role/$(ConvertTo-SafeUri $role)" $json
 }
 
-Function Add-JiraAttachment($issue, $file) {
+Function Add-JiraIssueAttachment($issue, $file) {
     # This function is much more complex than most, rather than use Invoke-JiraRequest, just using Invoke-RestMethod natively
     # Adding header to prevent XSXF error
     $hashRequestHeader = @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"; "X-Atlassian-Token"="no-check"}
@@ -161,7 +161,7 @@ Export-ModuleMember -Function Set-JiraApiBase,
                               Remove-JiraGroupFromRole,
                               Invoke-JiraRequest,
                               Add-JiraGrouptoProject,
-                              Add-JiraAttachment,
+                              Add-JiraIssueAttachment,
                               Get-JiraGroup,
                               Get-JiraProjectList,
                               Get-JiraProject,
