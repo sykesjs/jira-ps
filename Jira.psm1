@@ -2,6 +2,28 @@ Function ConvertTo-SafeUri($uri) {
     Return [System.Uri]::EscapeDataString($uri)
 }
 
+Function ConvertTo-SafeAttachmentURI($url) {
+    $baseurl = $url.Substring(0, ($url.LastIndexof('/')+1))
+    $filename = $url.SubString(($url.LastIndexOf('/')+1), ($url.Length - $url.LastIndexOf('/') - 1))
+    $safeurl = $baseurl + $(ConvertTo-SafeURI $filename)
+    Return $safeurl
+}
+
+Function New-MultiPartContent ($file) {
+        # Build Multipart Form Content payload
+        $FileStream = [System.IO.FileStream]::new($file, [System.IO.FileMode]::Open)
+        $FileHeader = [System.Net.Http.Headers.ContentDispositionHeaderValue]::new('form-data')
+        $FileHeader.Name = $strFieldName
+        $FileHeader.FileName = Split-Path -leaf $file
+        $FileContent = [System.Net.Http.StreamContent]::new($FileStream)
+        $FileContent.Headers.ContentDisposition = $FileHeader
+        $FileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse($strContentType)
+    
+        $MultipartContent = [System.Net.Http.MultipartFormDataContent]::new()
+        $MultipartContent.Add($FileContent)
+        Return $MultipartContent
+}
+
 Function Set-JiraApiBase {
     Param (
         [Parameter (Mandatory=$True)]
@@ -73,7 +95,7 @@ Function Get-JiraIssue($issue) {
 }
 
 Function Get-JiraIssueAttachment($attachmenturl, $attachmentfilename) {
-    Return Invoke-WebRequest -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} $attachmenturl -OutFile $attachmentfilename
+    Return Invoke-WebRequest -Headers @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"} -Uri $(ConvertTo-SafeAttachmentURI $attachmenturl) -OutFile $attachmentfilename
 }
 Function Get-JiraIssueLink($issue, $linkeid) {
     Return Invoke-JiraRequest GET "issue/$(ConvertTo-SafeUri $issue)/issueLink/$(ConvertTo-SafeUri $linkedid)"
@@ -128,20 +150,9 @@ Function Add-JiraIssueAttachment($issue, $file) {
     $hashRequestHeader = @{"AUTHORIZATION"="Basic $env:JIRA_CREDENTIALS"; "X-Atlassian-Token"="no-check"}
     $strFieldName = "file"
     $strContentType = "application/octet-stream"
+    $Body = New-MultiPartContent $file
 
-    # Build Multipart Form Content payload
-    $FileStream = [System.IO.FileStream]::new($file, [System.IO.FileMode]::Open)
-    $FileHeader = [System.Net.Http.Headers.ContentDispositionHeaderValue]::new('form-data')
-    $FileHeader.Name = $strFieldName
-    $FileHeader.FileName = Split-Path -leaf $file
-    $FileContent = [System.Net.Http.StreamContent]::new($FileStream)
-    $FileContent.Headers.ContentDisposition = $FileHeader
-    $FileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse($strContentType)
-
-    $MultipartContent = [System.Net.Http.MultipartFormDataContent]::new()
-    $MultipartContent.Add($FileContent)
-
-    Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}issue/$(ConvertTo-SafeUri $issue)/attachments" -Method POST -Headers $hashRequestHeader -Body $MultipartContent
+    Return Invoke-RestMethod -Uri "${env:JIRA_API_BASE}issue/$(ConvertTo-SafeUri $issue)/attachments" -Method POST -Headers $hashRequestHeader -Body $Body
 }
 # End Add Functions
 
@@ -156,6 +167,8 @@ Function Update-ProjectPermissionScheme ($strProjectKey,$jsonProject) {
 Export-ModuleMember -Function Set-JiraApiBase,
                               Set-JiraCredentials,
                               ConvertTo-SafeUri,
+                              ConvertTo-SafeAttachmentURI,
+                              New-MultiPartContent,
                               Remove-JiraIssueLink,
                               Remove-JiraProject,
                               Remove-JiraGroupFromRole,
